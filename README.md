@@ -10,7 +10,7 @@ Project Plan:
 2. ✓ Convert model to TFLite using int8 quantization.
 3. ✓ Get TFLite model weights and quantization parameters using *Netron*.
 4. ✓ Create a Python POC that does manual inference on data in #3. Compare 
-results with FTLite interpretor on same data.
+results with TFLite interpretor on same data.
 5. Implement inference using TFLite data on iCE40 FPGA. (Matrix multiplication and ReLU.)
 6. Implement inference using TFLite data on RP2040 in C to compare with #5.
 
@@ -21,7 +21,7 @@ Here are the files in this project:
 
 | File | Description|
 |--|--|
-| mnist_hr_post_training_integer_quant.ipynb | This notebook builds the model and creates the FTLite file. Runs on Google Colab.|
+| mnist_hr_post_training_integer_quant.ipynb | This notebook builds the model and creates the TFLite file. Runs on Google Colab.|
 | inference_float32.ipynb | This notebook does manual inference on the unquantized float32 TFlite file.| 
 | inference_uint8.ipynb | This notebook does manual inference on the quantized int8 TFlite file. |
 | mnist_uint8 | Folder with weights from uint8 TFLite collected using Netron.|
