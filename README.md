@@ -27,6 +27,15 @@ Here are the files in this project:
 | mnist_uint8 | Folder with weights from uint8 TFLite collected using Netron.|
 | mnist_float32 | Folder with weights from float32 TFLite collected using Netron.|
 
+## JSON
+
+It's possible to extract a JSON file from the TFile file using `flatc` as follows:
+
+```
+flatc -t schema.fbs -- mnist_model_quant.tflite
+```
+
+But Netron is more convenient for saving the weight data into `.npy` files.
 
 ## Netron 
 
