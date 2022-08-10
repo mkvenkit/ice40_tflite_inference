@@ -14,7 +14,6 @@ results with TFLite interpretor on same data.
 5. Implement inference using TFLite data on iCE40 FPGA. (Matrix multiplication and ReLU.)
 6. Implement inference using TFLite data on RP2040 in C to compare with #5.
 
-
 ## Files
 
 Here are the files in this project:
@@ -26,6 +25,10 @@ Here are the files in this project:
 | inference_uint8.ipynb | This notebook does manual inference on the quantized int8 TFlite file. |
 | mnist_uint8 | Folder with weights from uint8 TFLite collected using Netron.|
 | mnist_float32 | Folder with weights from float32 TFLite collected using Netron.|
+
+## Current Issue
+
+**How to make inference_uint8.ipynb work. I am unsure how to use the quantization data.**
 
 ## JSON
 
