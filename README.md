@@ -28,4 +28,12 @@ Here are the files in this project:
 | mnist_float32 | Folder with weights from float32 TFLite collected using Netron.|
 
 
+## Netron 
 
+[Netron](https://netron.app/) is used to extract weights and quantization parameters from the TFLite model. As can be seen from the image below, the model consists of the following layers:
+
+1. 28 x 28 x 1 Image input.
+2. 128 unit Dense layer with ReLU.
+3. 10 unit Dense layer for output.
+
+![Netron](netron.png)
