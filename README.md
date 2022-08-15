@@ -21,10 +21,12 @@ Here are the files in this project:
 | File | Description|
 |--|--|
 | mnist_hr_post_training_integer_quant.ipynb | This notebook builds the model and creates the TFLite file. Runs on Google Colab.|
-| inference_float32.ipynb | This notebook does manual inference on the unquantized float32 TFlite file.| 
-| inference_uint8.ipynb | This notebook does manual inference on the quantized int8 TFlite file. |
-| mnist_uint8 | Folder with weights from uint8 TFLite collected using Netron.|
-| mnist_float32 | Folder with weights from float32 TFLite collected using Netron.|
+| mnist_uint8 | 2 layer model with quantization.|
+| mnist_float32 | 2 layer model with float32.|
+| mnist_1layer_uint8 | 1 layer model with quantization.|
+| mnist_1layer_float32 | 1 layer model with float32.|
+| mnist_1layer_8x8_uint8 | 1 layer 8x8 model with quantization.|
+| mnist_1layer_8x8_float32 |1 layer 8x8 model with float32.|
 
 ## Current Issue
 
