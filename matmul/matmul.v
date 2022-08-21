@@ -42,6 +42,17 @@ reg [IWIDTH-1:0] index;
 
 reg [31:0] sum[P-1:0];
 
+// For adder tree
+`define USER_ADDER_TREE
+// partial sums
+wire [31:0] S01 = sum[0] + sum[1];
+wire [31:0] S23 = sum[2] + sum[3];
+wire [31:0] S45 = sum[4] + sum[5];
+wire [31:0] S67 = sum[6] + sum[7];
+wire [31:0] S0 = S01 + S23;
+wire [31:0] S1 = S45 + S67;
+wire [31:0] S = S0 + S1;
+
 always@(posedge clk) begin
     
     if (!resetn) begin
@@ -81,6 +92,10 @@ always@(posedge clk) begin
             end
 
             sSUM2: begin
+`ifdef USER_ADDER_TREE
+                D <= S;
+                state <= sSUM3;
+`else
                 // add up sum across P units 
                 if (index < P) begin
                     D <= D + sum[index];
@@ -90,6 +105,7 @@ always@(posedge clk) begin
                     index <= 0;
                     state <= sSUM3;
                 end
+`endif 
             end
 
             sSUM3: begin

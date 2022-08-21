@@ -9,21 +9,18 @@ D = A.B
 
 Here:
 
-N = 70
-N = M*P + K
-M = 8
-P = 8
-K = 6
+N = 70, N = M*P + K, M = 8, P = 8, K = 6
 
 P is the number of MAC units.
 
 Computation happens in M + P + K cycles = 20 as opposed to a direct multiplication that will take 70 cycles.
 
-### Simulation
+
+**Simulation**
 
 ![test1](test1.png)
 
-### iCE40 synthesis**
+**iCE40 synthesis**
 
 ```
 read_verilog matmul.v
@@ -50,3 +47,30 @@ Resources used:
      SB_MAC16                        8
 ```
 
+# With an Adder Tree 
+
+Takes about 16 cycles.
+
+**Simulation**
+
+![test 2](test2.png)
+
+**iCE40 synthesis**
+
+
+```
+   Number of wires:                651
+   Number of wire bits:           2908
+   Number of public wires:         651
+   Number of public wire bits:    2908
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               1375
+     SB_CARRY                      310
+     SB_DFF                          4
+     SB_DFFESR                     292
+     SB_DFFSR                        4
+     SB_LUT4                       757
+     SB_MAC16                        8
+```
