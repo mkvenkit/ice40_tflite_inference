@@ -1,33 +1,50 @@
-PROJ=uart_tx
+PROJ = matmul
+PCF = matmul.pcf
+FPGA_PKG = sg48
+FPGA_TYPE = up5k
+NEXTPNR = nextpnr-ice40 
+ICEPACK = icepack
+ICETIME = icetime
+ICEPROG = iceprog
 
-all: $(PROJ).bit
+all: $(PROJ).bin
 
-$(PROJ).json: top.v matmul.v
-	yosys -p "synth_ecp5 -top top -json $@" $^
+PROJ_SRC = top.v matmul.v
 
-$(PROJ)_out.config: $(PROJ).json
-	nextpnr-ecp5 --json $< --textcfg $@ --85k --package CABGA381 --lpf ulx3s_v20.lpf
+%.bin: %.asc
+	$(ICEPACK) $< $@
 
-$(PROJ).bit: $(PROJ)_out.config
-	ecppack $< $@	
+%.json: $(PROJ_SRC)
+	yosys -ql $(basename $@)-yosys.log -p \
+	    'synth_ice40 -dsp -top top -json $@' $(PROJ_SRC) 
 
-prog: $(PROJ).bit
-	fujprog.exe $<
+%.asc: %.json
+	nextpnr-ice40 --${FPGA_TYPE} --package ${FPGA_PKG} --json $< --pcf ${PCF} --asc $@
 
-flash: $(PROJ).bit
-	fujprog.exe -j flash $<
+%.rpt: %.asc
+	$(ICETIME) -d $(DEVICE) -mtr $@ $<
 
+prog: $(PROJ).bin
+	$(ICEPROG) -S $<
+
+sudo-prog: $(PROJ).bin
+	@echo 'Executing prog as root!!!'
+	sudo $(ICEPROG) $<
+
+sudo-prog-ram: $(PROJ).bin
+	@echo 'Executing prog as root!!!'
+	sudo $(ICEPROG) -S $<
 sim:
 	iverilog -o tb.out -s tb testbench.v matmul.v
-	vvp tb.out 
-	
+	vvp tb.out
+
 sim-show:
 	gtkwave testbench.vcd   
-
+	
 clean:
-	rm -f *.bit *.config *.json out.txt *.vcd
+	rm -f *.json *.asc *.log *.bin log.txt out.txt *.vcd *.out
 
-.PHONY: prog clean
+.SECONDARY:
+.PHONY: all prog clean
 
-# To save output: make > out.txt 2>&1
-
+# make > out.txt 2>&1   

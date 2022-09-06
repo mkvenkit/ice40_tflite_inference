@@ -14,12 +14,20 @@ reg clk;
 reg resetn;
 reg start;
 
+wire [31:0] c0;
+wire [31:0] c1;
+wire [31:0] c2;
+wire [31:0] c3;
 wire [31:0] D;
 
 matmul m1 (
     .clk(clk), 
     .resetn(resetn),
     .start(start),
+    .c0(c0),
+    .c1(c1),
+    .c2(c2),
+    .c3(c3),
     .D(D)
 );
 
@@ -49,13 +57,12 @@ always @ ( * ) begin
 end
 
 localparam P = 8;
+localparam NROWS = 10;
+
 integer i;
 initial begin
     $dumpfile("testbench.vcd");
     $dumpvars;
-    for (i = i < P; i++; i++) begin
-        $dumpvars(0, m1.sum[i]);
-    end
     #10000
     $finish;
 end

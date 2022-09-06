@@ -2,85 +2,56 @@
 
 top.v
 
-A Simple UART TX example.
-
 */
 
-// Never forget this!
 `default_nettype none
 
 module top(
-  input clk_25mhz,
-  input  [6:0] btn,     // BTN_PWRn (btn[0])
-  output ftdi_rxd,      // serial output 
-  output [7:0] led   // LED 
+  input clk,
+  output led   // LED 
 );
 
-// reset signal for modules 
-wire resetn = btn[0];
 
-// UART signals 
-reg [7:0] data;
-reg data_ready;
-wire busy;
-// UART module 
-uart_tx uart1(
-    .clk_25mhz(clk_25mhz),
-    .resetn(resetn),
-    .data(data),
-    .start_tx(data_ready),
-    .busy(busy),
-    .tx(ftdi_rxd)
-);
+// BEGIN - init hack
+// iCE40 does not allow registers to initialised to 
+// anything other than 0
+// For workaround see:
+// https://github.com/YosysHQ/yosys/issues/103
+reg [7:0] resetn_counter = 0;
+wire resetn = &resetn_counter;
 
-// send data 
-localparam sWAITING = 2'b00;
-localparam sSENDING = 2'b01;
-localparam sUPDATE = 2'b10;
-
-reg [1:0] curr_state;
-
-always @(posedge clk_25mhz) begin
-    if (!resetn) begin
-        data <= 8'd0;
-        data_ready <= 1'b1;
-        curr_state <= sWAITING;
-    end
-    else begin
-        case (curr_state)
-            sWAITING: begin
-                if (busy)
-                    curr_state <= sSENDING;
-            end 
-
-            sSENDING: begin
-                if (!busy)
-                    curr_state <= sUPDATE;
-            end
-
-            sUPDATE: begin
-                data <= data + 1;
-                curr_state <= sWAITING;
-            end
-            default: 
-                curr_state <= sWAITING;
-        endcase
+always @(posedge clk) 
+begin
+    if (!resetn)
+    begin
+        resetn_counter <= resetn_counter + 1;
     end
 end
 
-
-// LED blink
-reg [22:0] counter;
 reg RL;
-always @ (posedge clk_25mhz)
-    begin 
+reg [22:0] counter;
+
+always @ (posedge clk) begin 
+    if (!resetn) begin
+        counter <= 0;
+    end
+    else begin
         counter <= counter + 1;
         if(!counter)
-            RL = ~RL;
+            RL <= ~RL;
     end
+end
 
-// set LEDs
-assign led[0] = RL;
-assign led[7:1] = {7{0}};
+wire [31:0] D;
+
+matmul m1 (
+    .clk(clk), 
+    .resetn(resetn),
+    .start(1'b1),
+    .D(D)
+);
+
+// set LED
+assign led = &D;
 
 endmodule

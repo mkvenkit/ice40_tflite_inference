@@ -1,66 +1,52 @@
 /*
 
-dotp.v
+matmul.v
 
-read_verilog dotp.v ; opt ; synth_ice40 -dsp
+read_verilog matmul1.v ; opt ; synth_ice40 -dsp
 
 */
 
-`default_nettype none
-
-module matmul #(parameter NROWS = 8'd4, parameter NCOLS = 8'd10) (
+module matmul (
     input clk,
     input resetn,
     input start,
-    output [31:0] c0,
-    output [31:0] c1,
-    output [31:0] c2,
-    output [31:0] c3,
     output reg [31:0] D
 );
 
-reg [7:0] A[0:NROWS-1][0:NCOLS-1];
-reg [7:0] B[0:NCOLS-1];
-reg [31:0] C[0:NROWS-1];
+localparam N = 8'd70;
+localparam WADDR = $clog2(N) + 1;
+reg [7:0] A[N-1:0];
+reg [7:0] B[N-1:0];
 
-assign c0 = C[0];
-assign c1 = C[1];
-assign c2 = C[2];
-assign c3 = C[3];
-
-integer i, j;
+integer i;
 initial begin
-    for (i = 0; i < NROWS; i = i+1) begin
-        for (j = 0; j < NCOLS; j = j+1)
-            A[i][j] = i + j;
-    end
-    for (i = 0; i < NCOLS; i++) begin
-        B[i] = i;
+    for (i = 0; i < N; i++) begin
+        A[i] = i+1;
+        B[i] = i+1;
     end
 end
 
-localparam sIDLE        = 3'b000;
-localparam sSUM1        = 3'b001;
-localparam sSUM2        = 3'b010;
-localparam sSUM3        = 3'b011;
-localparam sSUM4        = 3'b100;
 
-// NCOLS= M*P + K
-// P = 8 (number of MAC units)
-// M is number of multiples of P  
-// K < P is remaining elements 
+localparam sIDLE        = 2'b00;
+localparam sSUM1        = 2'b01;
+localparam sSUM2        = 2'b10;
+localparam sSUM3        = 2'b11;
+
+// N = M*P + K
 localparam P = 8'd8;
-localparam M = 8'd1;
-localparam K = 8'd2;
+localparam M = 8'd8;
+localparam K = 8'd6;
 
-reg [2:0] state;
+reg [1:0] state;
 
-reg [7:0] index;
+localparam IWIDTH = $clog2(M) + 1;
+reg [IWIDTH-1:0] index;
 
-reg [31:0] sum[0:P-1];
+reg [31:0] sum[P-1:0];
 
 // For adder tree
-`define USER_ADDER_TREE
+//`define USER_ADDER_TREE
+`ifdef USER_ADDER_TREE
 // partial sums
 wire [31:0] S01 = sum[0] + sum[1];
 wire [31:0] S23 = sum[2] + sum[3];
@@ -69,8 +55,22 @@ wire [31:0] S67 = sum[6] + sum[7];
 wire [31:0] S0 = S01 + S23;
 wire [31:0] S1 = S45 + S67;
 wire [31:0] S = S0 + S1;
+`endif 
 
-reg [$clog2(NROWS): 0] row_index;
+//  infer BRAM
+reg [7:0] valA;
+reg [7:0] valB;
+wire [WADDR-1:0] addrA = (state == sSUM1) ? i + index*P : index + P*M;
+wire [WADDR-1:0] addrB = (state == sSUM1) ? i + index*P : index + P*M;
+
+always @(posedge clk) begin
+    valA <= A[addrA];
+end
+
+always @(posedge clk) begin
+    valB <= B[addrB];
+end
+
 
 always@(posedge clk) begin
     
@@ -80,7 +80,6 @@ always@(posedge clk) begin
         for (i = 0; i < P; i++) begin
             sum[i] <= 0;
         end 
-        row_index <= 0;
         state <= sIDLE;
     end
     else begin
@@ -88,17 +87,11 @@ always@(posedge clk) begin
         case (state)
             sIDLE: begin
                 index <= 0;
-                D <= 32'd0;
-                for (i = 0; i < P; i=i+1) begin
+                for (i = 0; i < P; i++) begin
                     sum[i] <= 0;
                 end 
-                row_index <= 0;
-                if (start) begin
-                    for (i = 0; i < NROWS; i=i+1) begin
-                        C[i] <= 0;
-                    end 
+                if (start)
                     state <= sSUM1; 
-                end
             end
 
             sSUM1: begin
@@ -106,7 +99,7 @@ always@(posedge clk) begin
                 if (index < M) begin
                     // parallel computation on P units
                     for (i = 0; i < P; i++) begin
-                        sum[i] <= sum[i] + A[row_index][i + index*P] * B[i + index*P];
+                        sum[i] <= sum[i] + valA * valB;
                     end
                     // incr index
                     index <= index + 1;
@@ -138,32 +131,14 @@ always@(posedge clk) begin
                 // add up remaining sum for K < P 
                 // (when N is not an integer multiple of P.)
                 if (index < K) begin
-                    D <= D + A[row_index][index + P*M] * B[index + P*M];
+                    D <= D + valA * valB;
                     index <= index + 1;
                 end
                 else begin
-                    state <= sSUM4;
+                    state <= sIDLE;
                 end
             end
-
-            sSUM4: begin
-                // set data 
-                C[row_index] <= D;
-                // incr row
-                row_index <= row_index + 1;
-                // reset index
-                index <= 0;
-                D <= 32'd0;
-                for (i = 0; i < P; i=i+1) begin
-                    sum[i] <= 0;
-                end 
-                // last row 
-                if (row_index == (NROWS-1))
-                    state <= sIDLE;
-                else 
-                    state <= sSUM1;
-            end
-
+ 
             default: 
                 state <= sIDLE;
         endcase
